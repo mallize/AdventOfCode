@@ -1,6 +1,6 @@
 'use strict'
 
-const fs = require('fs'); 
+const fs = require('fs');
 
 const readFile = (fileName) => {
    return fs.readFileSync(fileName).toString().split('\n')
@@ -29,17 +29,6 @@ const extractClaims = (claimsArray) => claimsArray.map(claimString => {
    return claim
 })
 
-const createFabricGrid = (x, y) => {
-   const fabricGrid = []
-   for (let i = 0; i <= x - 1; i++) {
-      for (let j = 0; j <= y - 1; j++) {
-         fabricGrid.push({ x: i, y: j, count: 0, claimIds: [] })
-      }
-   }
-
-   return fabricGrid
-}
-
 const sectionHasClaim = (x, y, claim) => {
    const { leftOffset, width, topOffset, height } = claim
 
@@ -50,20 +39,30 @@ const sectionHasClaim = (x, y, claim) => {
    return sectionClaim
 }
 
-const markClaimedSections = (claims, fabricGrid) => {
-   fabricGrid.forEach((section, index) => {
-      claims.forEach(claim => {
-         if (sectionHasClaim(section.x, section.y, claim)) {
-            fabricGrid[index].count = fabricGrid[index].count + 1
-            fabricGrid[index].claimIds.push(claim.id)
-         }
-      })
-   })
+const createGridWithClaims = (claims, x, y) => {
+   const fabricGrid = []
+
+   for (let i = 0; i <= x - 1; i++) {
+      for (let j = 0; j <= y - 1; j++) {
+         let section = {x : i, y : j, count : 0, claimIds : []}
+
+         claims.forEach(claim => {
+            if (sectionHasClaim(section.x, section.y, claim)) {
+               section.count = section.count + 1 
+               section.claimIds.push(claim.id)
+            }
+         })
+
+         fabricGrid.push(section)
+      }
+   }
+
+   return fabricGrid
 }
-const claimsFeedFromFile = readFile('day3.txt')
+
+const claimsFeedFromFile = readFile('day3.test.txt')
 const claims = extractClaims(claimsFeedFromFile)
-const fabricGrid = createFabricGrid(1000, 1000)
-markClaimedSections(claims, fabricGrid)
+const fabricGrid = createGridWithClaims(claims, 1000, 1000)
 
 // Day 3 - Part 1
 const overlaps = fabricGrid.filter(section => section.count > 1).length
@@ -74,11 +73,11 @@ const noOverlap = Array.from(new Set(
    fabricGrid
       .filter(section => section.claimIds.length === 1)
       .map(section => section.claimIds[0]))
-   )
+)
    .map(candidate => {
       const sections = fabricGrid.filter(section => section.claimIds.includes(candidate) && section.claimIds.length > 1)
       return sections.length <= 0 ? candidate : null
    })
    .filter(x => x != null)
 
-console.log(`Day 3 - Part 2 = ${JSON.stringify(noOverlap)}`)
+console.log(`Day 3 - Part 2 answer = ${noOverlap[0]}`)
